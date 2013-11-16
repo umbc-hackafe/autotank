@@ -69,12 +69,14 @@ def checkControls(scr):
 
     elif len(kn) == 1 and ord(kn) >= ord('1') and ord(kn) <= ord('9'):
         speedMode = int(kn) * 10
-        turretSpeed = speedMode
-        tank.setTurretSpeed(turretSpeed)
+        if turretSpeed > 0:        
+            turretSpeed = speedMode
+            tank.setTurretSpeed(turretSpeed)
     elif kn == '0':
         speedMode = 100
-        turretSpeed = speedMode
-        tank.setTurretSpeed(turretSpeed)
+        if turretSpeed > 0:        
+            turretSpeed = speedMode
+            tank.setTurretSpeed(turretSpeed)
 
 def redraw(scr):
     scr.erase()
@@ -82,14 +84,14 @@ def redraw(scr):
     size = scr.getmaxyx()
 
     totalwidth = 44
-    totalheight = 15
+    totalheight = 13
 
     # treads
     TrbX = int(size[1] / 2 - totalwidth / 2)
     TrbY = int(size[0] / 2 - totalheight / 2)
 
     TrbW = 20
-    TrbH = 15
+    TrbH = 13
 
     drawbox(TrbY, TrbX, TrbW, TrbH, scr, curses.color_pair(6))
 
@@ -110,12 +112,12 @@ def redraw(scr):
     # left tread dir
     drawbtn(TrY, TrlX, 'Q', leftTreadDir > 0, scr)
     drawbtn(TrY + TrYs, TrlX, 'A', leftTreadDir == 0, scr)
-    drawbtn(TrY + 2*TrYs, TrlX, 'Z', not leftTreadDir < 0, scr)
+    drawbtn(TrY + 2*TrYs, TrlX, 'Z', leftTreadDir < 0, scr)
 
     # right tread dir
     drawbtn(TrY, TrrX, 'E', rightTreadDir > 0, scr)
     drawbtn(TrY + TrYs, TrrX, 'D', rightTreadDir == 0, scr)
-    drawbtn(TrY + 2*TrYs, TrrX, 'C', not rightTreadDir < 0, scr)
+    drawbtn(TrY + 2*TrYs, TrrX, 'C', rightTreadDir < 0, scr)
 
     # Turret
     TubX = TrbX + TrbW + 2
@@ -166,7 +168,4 @@ def drawbox(y, x, width, height, scr, attr):
 
 tank = xmlrpc.client.ServerProxy("http://130.85.228.132:8000")
 
-try:
-    curses.wrapper(main)
-finally:
-    tank.close()
+curses.wrapper(main)

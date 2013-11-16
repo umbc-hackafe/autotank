@@ -39,7 +39,7 @@ class motorcontrol:
 
         values = bytearray(2)
         values[0] = int(treadNum)
-        values[1] = Direction
+        values[1] = Direction if Direction >= 0 else 256 + Direction
         
         self.ser.write(bytes(treadSetSpeedDir, "ascii"))
         self.ser.write(values)
