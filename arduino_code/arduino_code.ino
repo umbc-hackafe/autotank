@@ -82,5 +82,5 @@ void setTurretDir(byte dir){
 
 void changeTurretDir(){
   digitalWrite(turretDirPin, (turretDir = !turretDir) ? HIGH : LOW);
-  analogWrite(turretSpeedPin, (turretSpeed = ~turretSpeed));
+  analogWrite(turretSpeedPin, turretDir ? ~turretSpeed : turretSpeed);
 }
