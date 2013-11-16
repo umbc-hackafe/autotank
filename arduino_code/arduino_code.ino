@@ -1,17 +1,17 @@
-#define turretDirPin 13
-#define turretSpeedPin 10
+#define turretDirPin 2
+#define turretSpeedPin 3
 
 #define turretChangeDir 'a'
 #define turretChangeSpd 'b'
 #define treadSetSpeedDir 'c'
 #define turretSetDir 'd'
 
-byte turretDir = true;
+byte turretDir = false;
 byte turretSpeed = 0;
 
-const byte treadFwdPin[2] = {2, 4};
-const byte treadRevPin[2] = {3, 5};
-signed byte treadDir[2] = {0, 0};
+const byte treadFwdPin[2] = {12, 7};
+const byte treadRevPin[2] = {13, 8};
+signed char treadDir[2] = {0, 0};
 
 void setup(){
   pinMode(turretDirPin, OUTPUT);
@@ -26,8 +26,8 @@ void setup(){
     pinMode(treadFwdPin[i], OUTPUT);
     pinMode(treadRevPin[i], OUTPUT);
     
-    digitalWrite(treadFwdPin[i], treadDir[i] > 0 ? HIGH : LOW);
-    digitalWrite(treadRevPin[i], treadDir[i] < 0 ? HIGH : LOW);
+    digitalWrite(treadFwdPin[i], treadDir[i] > 0 ? LOW : HIGH);
+    digitalWrite(treadRevPin[i], treadDir[i] < 0 ? LOW : HIGH);
   }
 } 
 
@@ -40,7 +40,7 @@ void loop(){
       
       turretSpeed = Serial.read();
       
-      analogWrite(turretSpeedPin, turretSpeed);
+      analogWrite(turretSpeedPin, turretDir ? ~turretSpeed : turretSpeed);
     }
     else if(cmd == turretChangeDir){
       changeTurretDir();
@@ -48,7 +48,7 @@ void loop(){
     else if(cmd == turretSetDir){
       while(Serial.available() < 1);
       
-      byte dir = Serial.read();
+      signed char dir = Serial.read();
       
       setTurretDir(dir);
     }
@@ -64,14 +64,14 @@ void loop(){
   }
 }
 
-void setTreadSpeedDir(byte tread, byte spd){
+void setTreadSpeedDir(byte tread, signed char spd){
   tread = constrain(tread, 0, 1);
-  sod = constrain(spd, -1, 1);
+  spd = constrain(spd, -1, 1);
   
   treadDir[tread] = spd;
   
-  digitalWrite(treadFwdPin[tread], spd > 0 ? HIGH : LOW);
-  digitalWrite(treadRevPin[tread], spd < 0 ? HIGH : LOW);
+  digitalWrite(treadFwdPin[tread], spd > 0 ? LOW : HIGH);
+  digitalWrite(treadRevPin[tread], spd < 0 ? LOW : HIGH);
 }
 
 void setTurretDir(byte dir){
@@ -81,12 +81,6 @@ void setTurretDir(byte dir){
 }
 
 void changeTurretDir(){
-  if(turretSpeed > 0){
-    analogWrite(turretSpeedPin, 0);
-    delay(200);
-  }
   digitalWrite(turretDirPin, (turretDir = !turretDir) ? HIGH : LOW);
-  if(turretSpeed > 0){
-    analogWrite(turretSpeedPin, turretSpeed);
-  }
+  analogWrite(turretSpeedPin, (turretSpeed = ~turretSpeed));
 }

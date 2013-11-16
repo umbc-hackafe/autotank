@@ -44,13 +44,13 @@ def checkControls(scr):
 
     if kn == 'E':
         rightTreadDir = 1
-        tank.setTreadSpeedDir(0, rightTreadDir)
+        tank.setTreadSpeedDir(1, rightTreadDir)
     elif kn == 'D':
         rightTreadDir = 0
-        tank.setTreadSpeedDir(0, rightTreadDir)
+        tank.setTreadSpeedDir(1, rightTreadDir)
     elif kn == 'C':
         rightTreadDir = -1
-        tank.setTreadSpeedDir(0, rightTreadDir)
+        tank.setTreadSpeedDir(1, rightTreadDir)
             
     elif kn == 'J':
         turretSpeed = speedMode
