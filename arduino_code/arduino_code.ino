@@ -9,26 +9,25 @@
 byte turretDir = true;
 byte turretSpeed = 0;
 
-const byte treadDigPin[2] = {2, 4};
-const byte treadPwmPin[2] = {3, 5};
-byte treadDig[2] = {false, false};
-byte treadPwm[2] = {0, 0};
+const byte treadFwdPin[2] = {2, 4};
+const byte treadRevPin[2] = {3, 5};
+signed byte treadDir[2] = {0, 0};
 
 void setup(){
   pinMode(turretDirPin, OUTPUT);
   pinMode(turretSpeedPin, OUTPUT);
   
-  Serial.begin(9600);
-  
   digitalWrite(turretDirPin, turretDir ? HIGH : LOW);
   analogWrite(turretSpeedPin, turretSpeed);
   
+  Serial.begin(9600);
+  
   for(int i = 0; i < 2; i++){
-    pinMode(treadDigPin[i], OUTPUT);
-    pinMode(treadPwmPin[i], OUTPUT);
+    pinMode(treadFwdPin[i], OUTPUT);
+    pinMode(treadRevPin[i], OUTPUT);
     
-    digitalWrite(treadDigPin[i], treadDig[i] ? HIGH : LOW);
-    analogWrite(treadPwmPin[i], treadPwm[i]);
+    digitalWrite(treadFwdPin[i], treadDir[i] > 0 ? HIGH : LOW);
+    digitalWrite(treadRevPin[i], treadDir[i] < 0 ? HIGH : LOW);
   }
 } 
 
@@ -54,27 +53,25 @@ void loop(){
       setTurretDir(dir);
     }
     else if(cmd == treadSetSpeedDir){
-      while(Serial.available() < 3);
+      while(Serial.available() < 2);
       
       byte tread = Serial.read();
-      byte dir = Serial.read();
       byte spd = Serial.read();
       
-      setTreadSpeedDir(tread, dir, spd);
+      setTreadSpeedDir(tread, spd);
     }
     
   }
 }
 
-void setTreadSpeedDir(byte tread, byte dir, byte spd){
+void setTreadSpeedDir(byte tread, byte spd){
   tread = constrain(tread, 0, 1);
+  sod = constrain(spd, -1, 1);
   
-  treadDig[tread] = dir;
+  treadDir[tread] = spd;
   
-  digitalWrite(treadDigPin[tread], dir ? HIGH : LOW);
-  
-  treadPwm[tread] = spd;
-  analogWrite(treadPwmPin[tread], dir ? ~spd : spd);
+  digitalWrite(treadFwdPin[tread], spd > 0 ? HIGH : LOW);
+  digitalWrite(treadRevPin[tread], spd < 0 ? HIGH : LOW);
 }
 
 void setTurretDir(byte dir){

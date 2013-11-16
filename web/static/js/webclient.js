@@ -122,43 +122,36 @@ function setTurretProp(){
 }
 
 function setTreadSpeeds(){
-  var leftTreadSpeed = 0;
-  var leftTreadDir = true;
-  var rightTreadSpeed = 0;
-  var rightTreadDir = true;
+  var leftTreadDir = 0;
+  var rightTreadDir = 0;
   
   if(treadspeed > 0){
-    leftTreadSpeed = treaddir >= 0 ? 100 : 0;
-    rightTreadSpeed = treaddir <= 0 ? 100 : 0;
-    
-    leftTreadDir = true;
-    rightTreadDir = true;
+    leftTreadDir = treaddir >= 0 ? 1 : 0;
+    rightTreadDir = treaddir <= 0 ? 1 : 0;
   }
   else if(treadspeed < 0){
-    leftTreadSpeed = treaddir >= 0 ? 100 : 0;
-    rightTreadSpeed = treaddir <= 0 ? 100 : 0;
-
-    leftTreadDir = false;
-    rightTreadDir = false;
+    leftTreadDir = treaddir >= 0 ? -1 : 0;
+    rightTreadDir = treaddir <= 0 ? -1 : 0;
   }
   else {    
-    leftTreadSpeed = treaddir != 0 ? 100 : 0;
-    rightTreadSpeed = treaddir != 0 ? 100 : 0;
-
     if(treaddir < 0){
-      leftTreadDir = false;
-      rightTreadDir = true;
+      leftTreadDir = -1;
+      rightTreadDir = 1;
+    }
+    else if(treaddir > 0){
+      leftTreadDir = 1;
+      rightTreadDir = -1;
     }
     else{
-      leftTreadDir = true;
-      rightTreadDir = false;
+      leftTreadDir = 0;
+      rightTreadDir = 0;
     }
   }
   
   $.xmlrpc({
     url: url,
     methodName: 'setTreadSpeedDir',
-    params: [0, leftTreadDir, leftTreadSpeed],
+    params: [0, leftTreadDir],
     success: function(response, status, jqXHR) { },
     error: function(jqXHR, status, error) { }
   });
@@ -166,7 +159,7 @@ function setTreadSpeeds(){
   $.xmlrpc({
     url: url,
     methodName: 'setTreadSpeedDir',
-    params: [1, rightTreadDir, rightTreadSpeed],
+    params: [1, rightTreadDir],
     success: function(response, status, jqXHR) { },
     error: function(jqXHR, status, error) { }
   });

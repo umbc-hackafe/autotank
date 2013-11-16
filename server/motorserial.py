@@ -34,14 +34,12 @@ class motorcontrol:
         self.ser.write(bytes(turretChangeSpd, "ascii"))
         self.ser.write(speedvalue)
         
-    def setTreadSpeedDir(self, treadNum, Direction, speedPercent):
-        speedVal = int(max(min(speedPercent / 100.0 * 255, 255), 0))
-        Direction = 1 if Direction else 0
+    def setTreadSpeedDir(self, treadNum, Direction):
+        speedVal = int(max(min(Direction, 1), -1))
 
-        values = bytearray(3)
+        values = bytearray(2)
         values[0] = int(treadNum)
         values[1] = Direction
-        values[2] = speedVal
         
         self.ser.write(bytes(treadSetSpeedDir, "ascii"))
         self.ser.write(values)

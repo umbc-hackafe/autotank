@@ -2,14 +2,11 @@
 import curses
 import xmlrpc.client
 
-leftTreadFwd = True
-rightTreadFwd = True
-leftTreadSpeed = 0
-rightTreadSpeed = 0
+leftTreadDir = 0
+rightTreadDir = 0
 
 turretDirection = True
 turretSpeed = 0
-
 speedMode = 100
 
 def main(scr):
@@ -33,31 +30,27 @@ def main(scr):
 def checkControls(scr):
     kn = str.upper(scr.getkey())
     
-    global leftTreadFwd, leftTreadSpeed, rightTreadFwd, rightTreadSpeed, turretDirection, turretSpeed, speedMode
+    global leftTreadDir, rightTreadDir, turretDirection, turretSpeed, speedMode
 
     if kn == 'Q':
-        leftTreadFwd = True
-        leftTreadSpeed = speedMode
-        tank.setTreadSpeedDir(0, leftTreadFwd, leftTreadSpeed)
+        leftTreadDir = 1
+        tank.setTreadSpeedDir(0, leftTreadDir)
     elif kn == 'A':
-        leftTreadSpeed = 0
-        tank.setTreadSpeedDir(0, leftTreadFwd, leftTreadSpeed)
+        leftTreadDir = 0
+        tank.setTreadSpeedDir(0, leftTreadDir)
     elif kn == 'Z':
-        leftTreadFwd = False
-        leftTreadSpeed = speedMode
-        tank.setTreadSpeedDir(0, leftTreadFwd, leftTreadSpeed)
+        leftTreadDir = -1
+        tank.setTreadSpeedDir(0, leftTreadDir)
 
-    elif kn == 'E':
-        rightTreadFwd = True
-        rightTreadSpeed = speedMode
-        tank.setTreadSpeedDir(1, rightTreadFwd, rightTreadSpeed)
+    if kn == 'E':
+        rightTreadDir = 1
+        tank.setTreadSpeedDir(0, rightTreadDir)
     elif kn == 'D':
-        rightTreadSpeed = 0
-        tank.setTreadSpeedDir(1, rightTreadFwd, rightTreadSpeed)
+        rightTreadDir = 0
+        tank.setTreadSpeedDir(0, rightTreadDir)
     elif kn == 'C':
-        rightTreadFwd = False
-        rightTreadSpeed = speedMode
-        tank.setTreadSpeedDir(1, rightTreadFwd, rightTreadSpeed)
+        rightTreadDir = -1
+        tank.setTreadSpeedDir(0, rightTreadDir)
             
     elif kn == 'J':
         turretSpeed = speedMode
@@ -76,8 +69,12 @@ def checkControls(scr):
 
     elif len(kn) == 1 and ord(kn) >= ord('1') and ord(kn) <= ord('9'):
         speedMode = int(kn) * 10
+        turretSpeed = speedMode
+        tank.setTurretSpeed(turretSpeed)
     elif kn == '0':
         speedMode = 100
+        turretSpeed = speedMode
+        tank.setTurretSpeed(turretSpeed)
 
 def redraw(scr):
     scr.erase()
@@ -111,18 +108,14 @@ def redraw(scr):
     scr.addstr(TrY - 1, TrrX, "RIGHT")
 
     # left tread dir
-    drawbtn(TrY, TrlX, 'Q', leftTreadFwd and leftTreadSpeed != 0, scr)
-    drawbtn(TrY + TrYs, TrlX, 'A', leftTreadSpeed == 0, scr)
-    drawbtn(TrY + 2*TrYs, TrlX, 'Z', not leftTreadFwd and leftTreadSpeed != 0, scr)
+    drawbtn(TrY, TrlX, 'Q', leftTreadDir > 0, scr)
+    drawbtn(TrY + TrYs, TrlX, 'A', leftTreadDir == 0, scr)
+    drawbtn(TrY + 2*TrYs, TrlX, 'Z', not leftTreadDir < 0, scr)
 
     # right tread dir
-    drawbtn(TrY, TrrX, 'E', rightTreadFwd and rightTreadSpeed != 0, scr)
-    drawbtn(TrY + TrYs, TrrX, 'D', rightTreadSpeed == 0, scr)
-    drawbtn(TrY + 2*TrYs, TrrX, 'C', not rightTreadFwd and rightTreadSpeed != 0, scr)
-
-    scr.addch(TrY + 3*TrYs, TrlX-3, 'S')
-    scr.addstr(TrY + 3*TrYs, TrlX+1, str.format("{0: >3d}%", leftTreadSpeed))
-    scr.addstr(TrY + 3*TrYs, TrrX+1, str.format("{0: >3d}%", rightTreadSpeed))
+    drawbtn(TrY, TrrX, 'E', rightTreadDir > 0, scr)
+    drawbtn(TrY + TrYs, TrrX, 'D', rightTreadDir == 0, scr)
+    drawbtn(TrY + 2*TrYs, TrrX, 'C', not rightTreadDir < 0, scr)
 
     # Turret
     TubX = TrbX + TrbW + 2
@@ -151,20 +144,6 @@ def redraw(scr):
     
     scr.addstr(TusY, TuX, "SPEED")
     scr.addstr(TusY, TuX + 8, str.format("{0: >3d}%", turretSpeed))
-
-    #speed mode indicator
-    TsbY = TubY + TubH
-    TsbX = TubX
-    
-    TsbW = TubW
-    TsbH = TrbH - TubH
-
-    drawbox(TsbY, TsbX, TsbW, TsbH, scr, curses.color_pair(6))
-
-    scr.addstr(TsbY, TsbX + 1, " SETTINGS ", curses.color_pair(5))
-
-    scr.addstr(TsbY + 2, TsbX + 4, "SPEED")
-    scr.addstr(TsbY + 2, TsbX + 4 + 8, str.format("{0: >3d}%", speedMode))
 
     scr.refresh()
 
