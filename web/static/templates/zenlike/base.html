@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+	zenlike1.0 by nodethirtythree design
+	http://www.nodethirtythree.com
+
+-->
+<html>
+<head>
+{% block title %}<title>{{ activePage }}</title>{% endblock %}
+<link rel="stylesheet" type="text/css" href="/static/templates/zenlike/default.css" />
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<div id="upbg"></div>
+
+<div id="outer">
+
+
+	<div id="header">
+		<div id="headercontent">
+			<h1>A Tank<sup>{{ version }}</sup></h1>
+			<h2>No, really, it's a tank.</h2>
+		</div>
+	</div>
+
+
+	<form method="post" action="">
+		<div id="search">
+			<input type="text" class="text" maxlength="64" name="keywords" />
+			<input type="submit" class="submit" value="Search" />
+		</div>
+	</form>
+
+
+	<div id="headerpic"></div>
+
+	
+	<div id="menu">
+		<!-- HINT: Set the class of any menu link below to "active" to make it appear active -->
+		<ul>
+			{% for i,j in sections %}
+				{% if i == activePage %}
+				<li><a href="/ioctl/{{ j }}" class="active">{{ i }}</a></li>
+				{% else %}
+				<li><a href="/ioctl/{{ j }}">{{ i }}</a></li>
+				{% endif %}
+			{% endfor %}
+		</ul>
+	</div>
+	<div id="menubottom"></div>
+
+	
+	<div id="content">
+	{% block content %}{% endblock %}
+	</div>
+
+	<div id="footer">
+			<div class="left">&copy; 2013 Hackaf&eacute; All rights reserved.</div>
+			<div class="right">Design by <a href="http://www.nodethirtythree.com/">NodeThirtyThree Design</a></div>
+	</div>
+	
+</div>
+
+</body>
+</html>
