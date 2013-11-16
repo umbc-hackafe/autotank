@@ -146,12 +146,12 @@ function setTreadSpeeds(){
     rightTreadSpeed = treaddir != 0 ? 100 : 0;
 
     if(treaddir < 0){
-      leftTreadDir = true;
-      rightTreadDir = false;
-    }
-    else{
       leftTreadDir = false;
       rightTreadDir = true;
+    }
+    else{
+      leftTreadDir = true;
+      rightTreadDir = false;
     }
   }
   
