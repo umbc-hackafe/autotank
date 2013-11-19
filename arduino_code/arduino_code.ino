@@ -18,7 +18,7 @@ void setup(){
   pinMode(turretSpeedPin, OUTPUT);
   
   digitalWrite(turretDirPin, turretDir ? HIGH : LOW);
-  analogWrite(turretSpeedPin, turretSpeed);
+  analogWrite(turretSpeedPin, turretDir ? ~turretSpeed : turretSpeed);
   
   Serial.begin(9600);
   

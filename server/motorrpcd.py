@@ -7,7 +7,7 @@ from motorserial import *
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
-server = SimpleXMLRPCServer(("192.168.0.108", 8000), 
+server = SimpleXMLRPCServer(("0.0.0.0", 8000), 
                             requestHandler=RequestHandler, 
                             allow_none = True)
 server.register_introspection_functions()
