@@ -17,9 +17,9 @@ public class SensorListenerService extends Service implements SensorEventListene
 	public static boolean RUNNING = false;
 	
 	public interface TankDataListener {
-		public void onAccelerationChanged(double x, double y, double z);
+		public void onAccelerationChanged(float x, float y, float z);
 		public void onLocationChanged();	// FIXME
-		public void onRotationChanged(double x, double y, double z);
+		public void onRotationChanged(float x, float y, float z);
 	}
 	
 	public class SensorListenerBinder extends Binder {
