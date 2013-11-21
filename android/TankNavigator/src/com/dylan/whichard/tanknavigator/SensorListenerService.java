@@ -3,23 +3,34 @@ package com.dylan.whichard.tanknavigator;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationRequestCreator;
+
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
-public class SensorListenerService extends Service implements SensorEventListener {
+public class SensorListenerService extends Service implements SensorEventListener, LocationListener {
 	public static boolean RUNNING = false;
 	
 	public interface TankDataListener {
 		public void onAccelerationChanged(float x, float y, float z);
-		public void onLocationChanged();	// FIXME
+		public void onLocationChanged(Location l);	// FIXME
 		public void onRotationChanged(float x, float y, float z);
+		
+		public long getRateLimit(TankControlProtocol.DataType t);
 	}
 	
 	public class SensorListenerBinder extends Binder {
@@ -35,6 +46,7 @@ public class SensorListenerService extends Service implements SensorEventListene
 	// * Accelerometer
 	// * Compass
 	
+	private LocationClient googlePlayLocation;
 	private Sensor accelerometer;
 	private Sensor compass;
 	private final IBinder binder = new SensorListenerBinder();
@@ -52,6 +64,29 @@ public class SensorListenerService extends Service implements SensorEventListene
 		sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 		accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		compass = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+		
+		googlePlayLocation = new LocationClient(getApplicationContext(), new GooglePlayServicesClient.ConnectionCallbacks() {
+			
+			@Override
+			public void onDisconnected() {
+				Log.d("SensorListenerService", "Disconnected from Google Play Services.");
+			}
+			
+			@Override
+			public void onConnected(Bundle arg0) {
+				Log.d("SensorListenerService", "Connected to Google Play Services!");
+				LocationRequest request = new LocationRequest();
+				request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setFastestInterval(5).setInterval(20);
+				googlePlayLocation.requestLocationUpdates(request, SensorListenerService.this);
+			}
+		}, new GooglePlayServicesClient.OnConnectionFailedListener() {
+			
+			@Override
+			public void onConnectionFailed(ConnectionResult arg0) {
+				Log.e("SensorListenerService", "Connection to Google Play Services failed.");
+			}
+		});
+		googlePlayLocation.connect();
 		
 		sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
 		sensorManager.registerListener(this, compass, SensorManager.SENSOR_DELAY_FASTEST);
@@ -88,14 +123,21 @@ public class SensorListenerService extends Service implements SensorEventListene
 			for (TankDataListener l : listeners) {
 				l.onAccelerationChanged(event.values[0], event.values[1], event.values[2]);
 			}
-			Log.d("SensorListenerService", String.format("Accelerometer: [%.2f, %.2f, %.2f]", event.values[0], event.values[1], event.values[2]));
+			//Log.d("SensorListenerService", String.format("Accelerometer: [%.2f, %.2f, %.2f]", event.values[0], event.values[1], event.values[2]));
 			break;
 		case Sensor.TYPE_ROTATION_VECTOR:
 			for (TankDataListener l : listeners) {
 				l.onRotationChanged(event.values[0], event.values[1], event.values[2]);
 			}
-			Log.d("SensorListenerService", String.format("Rotation: <%.3f, %.3f, %.3f>", event.values[0], event.values[1], event.values[2]));
+			//Log.d("SensorListenerService", String.format("Rotation: <%.3f, %.3f, %.3f>", event.values[0], event.values[1], event.values[2]));
 			break;
+		}
+	}
+
+	@Override
+	public void onLocationChanged(Location arg0) {
+		for (TankDataListener l : listeners) {
+			l.onLocationChanged(arg0);
 		}
 	}
 }

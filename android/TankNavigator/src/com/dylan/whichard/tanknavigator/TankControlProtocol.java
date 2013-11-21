@@ -7,6 +7,7 @@ public class TankControlProtocol {
 		OPEN_FIREHOSE("MOAR", "Starts sending the chosen sensor data continuously."),
 		ADD_TYPES("WANT", "[ACC|ROT|GPS]: Start receiving data from the specified sensor."),
 		REMOVE_TYPES("NO", "[ACC|ROT|GPS]: Stops receiving data from the specified sensor."),
+		RATE_LIMIT("WHOA", "[delay]: Sets the minimum delay in ms for sending updates."),
 		HELP("HALP", "Displays this help message"),
 		EXIT("BAI", "Closes the connection.");
 		

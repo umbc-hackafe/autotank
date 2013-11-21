@@ -39,23 +39,28 @@ public class SocketListenerService extends Service {
 		android.os.Debug.waitForDebugger();
 		
 		server = null;
-		try {
-			server = new ServerSocket(1337);
-			while (true) {
-				new SocketHandlerThread(getApplicationContext(), server.accept()).start();
+		new Thread("SocketListerService") {
+			public void run() {
+				try {
+					server = new ServerSocket(1337);
+					while (true) {
+						new SocketHandlerThread(getApplicationContext(),
+								server.accept()).start();
+					}
+				} catch (UnknownHostException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						server.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 			}
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				server.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		}.start();
 	}
 
 	@Override

@@ -13,10 +13,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.location.Location;
 import android.os.IBinder;
 import android.util.Log;
 
 public class SocketHandlerThread extends Thread implements TankDataListener {
+	private static final int MS_IN_NS = 1000000;
 	
 	private ServiceConnection sensorConnection = new ServiceConnection() {
 	    public void onServiceConnected(ComponentName className, IBinder service) {
@@ -27,6 +29,7 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 	        // cast its IBinder to a concrete class and directly access it.
 	        Log.d("TankNavigatorApplication", "Connecting to SensorListenerService");
 	        sensorService = ((SensorListenerService.SensorListenerBinder)service).getService();
+	        sensorService.addListener(SocketHandlerThread.this);
 	    }
 
 	    public void onServiceDisconnected(ComponentName className) {
@@ -34,6 +37,7 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 	        // unexpectedly disconnected -- that is, its process crashed.
 	        // Because it is running in our same process, we should never
 	        // see this happen.
+	    	sensorService.removeListener(SocketHandlerThread.this);
 	        sensorService = null;
 	        Log.d("TankNavigatorApplication", "Disconnecting from SensorListenerService");
 	    }
@@ -50,9 +54,14 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 	
 	private boolean firehose;
 	
+	private long delay;
+	private long lastGps;
+	private long lastAcc;
+	private long lastRot;
+	
 	private volatile float lastAccX, lastAccY, lastAccZ;
 	private volatile float lastRotX, lastRotY, lastRotZ;
-	private volatile float lastGpsLat, lastGpsLon, lastGpsElev;
+	private volatile Location lastLoc;
 
 	private Socket socket;
 	
@@ -63,7 +72,6 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 		this.context = context;
 		this.socket = s;
 		doBindService();
-		sensorService.addListener(this);
 	}
 	
 	public void run() {
@@ -71,21 +79,34 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 			scan = new Scanner(socket.getInputStream());
 			writer = new PrintWriter(socket.getOutputStream(), true);
 			
-			while (scan.hasNext()) {
+			while (!socket.isClosed() && scan.hasNext()) {
 				String tok = scan.next();
 				try {
-					Command cmd = Command.valueOf(tok);
+					Command cmd = Command.fromString(tok);
 					switch (cmd) {
 					case ADD_TYPES:
 						handleTypeArg(scan.next(), true);
 						break;
 					case CLOSE_FIREHOSE:
+						firehose = false;
 						break;
 					case EXIT:
-						writer.println("Goodbye!");
-						scan.close();
+						writer.println("KTHXBAI");
+						socket.shutdownInput();
+						socket.shutdownOutput();
+						socket.close();
 						break;
 					case HELP:
+						for (Command c : Command.values()) {
+							writer.println(String.format("%s %s", c.commandString, c.helpString));
+						}
+						
+						writer.println("------");
+						writer.println("Return Data Format:");
+						writer.println("ACC x,y,z (as floats)");
+						writer.println("ROT x,y,z (as floats)");
+						writer.println("GPS lat,lon,alt,bear,speed,acc,time");
+						writer.println("  (time is a long, in ms; others are floats)");
 						break;
 					case OPEN_FIREHOSE:
 						firehose = true;
@@ -96,6 +117,12 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 					case SINGLE_DATAGRAM:
 						sendLast();
 						break;
+					case RATE_LIMIT:
+						if (!scan.hasNextLong()) {
+							writer.write("Invalid delay specified");
+						} else {
+							delay = scan.nextLong() * MS_IN_NS;
+						}
 					}
 				} catch (IllegalArgumentException e) {
 					Log.d("SocketHandlerThread", "Invalid command received", e);
@@ -147,9 +174,22 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 			sendData("ROT", lastRotX, lastRotY, lastRotZ);
 		}
 		
-		if (gps) {
-			sendData("GPS", lastGpsLat, lastGpsLon, lastGpsElev);
+		if (gps && lastLoc != null) {
+			sendLocation(lastLoc);
 		}
+	}
+	
+	private void sendLocation(Location l) {
+		// lat
+		// lon
+		// elevation/altitude
+		// bearing
+		// speed
+		// accuracy
+		// time (ms)
+		
+		writer.println(String.format("GPS %f,%f,%f,%f,%f,%f,%d",l.getLatitude(), l.getLongitude(), l.getAltitude(),
+				l.getBearing(), l.getSpeed(), l.getAccuracy(), l.getTime()));
 	}
 	
 	private void sendData(String tag, float x, float y, float z) {
@@ -163,7 +203,6 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 	    // supporting component replacement by other applications).
 	    context.bindService(new Intent(context, 
 	            SensorListenerService.class), sensorConnection, Context.BIND_AUTO_CREATE);
-	    context.bindService(new Intent(context, SocketListenerService.class), sensorConnection, Context.BIND_AUTO_CREATE);
 	    sensorBound = true;
 	}
 
@@ -177,30 +216,40 @@ public class SocketHandlerThread extends Thread implements TankDataListener {
 
 	@Override
 	public void onAccelerationChanged(float x, float y, float z) {
-		if (firehose && acc) {
+		if (firehose && acc && (delay == 0 || System.nanoTime() - lastAcc >= delay)) {
 			sendData("ACC", x, y, z);
 		}
 		
 		lastAccX = x;
 		lastAccY = y;
 		lastAccZ = z;
+		
+		if (delay > 0) lastAcc = System.nanoTime();
 	}
 
 	@Override
-	public void onLocationChanged() {
-		if (firehose && gps) {
-			//sendData("GPS", lat, lon, elev);
+	public void onLocationChanged(Location l) {
+		if (firehose && gps && (delay == 0 || System.nanoTime() - lastGps >= delay)) {
+			sendLocation(l);
 		}
+		
+		lastLoc = l;
+		if (delay > 0) lastGps = System.nanoTime();
 	}
 
 	@Override
 	public void onRotationChanged(float x, float y, float z) {
-		if (firehose && rot) {
+		if (firehose && rot && (delay == 0 || System.nanoTime() - lastRot >= delay)) {
 			sendData("ROT", x, y, z);
 		}
 		
 		lastRotX = x;
 		lastRotY = y;
 		lastRotZ = z;
+		if (delay > 0) lastRot = System.nanoTime();
+	}
+	
+	public long getRateLimit(TankControlProtocol.DataType t) {
+		return delay;
 	}
 }

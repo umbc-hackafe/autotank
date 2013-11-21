@@ -61,7 +61,7 @@ public class TankNavigatorApplication extends Application {
 	    // supporting component replacement by other applications).
 	    bindService(new Intent(this, 
 	            SensorListenerService.class), sensorConnection, Context.BIND_AUTO_CREATE);
-	    bindService(new Intent(this, SocketListenerService.class), sensorConnection, Context.BIND_AUTO_CREATE);
+	    bindService(new Intent(this, SocketListenerService.class), socketConnection, Context.BIND_AUTO_CREATE);
 	    sensorBound = true;
 	}
 
